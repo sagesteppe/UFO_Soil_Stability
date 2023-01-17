@@ -72,20 +72,19 @@ soil_stab <- read.csv( file.path(praw, f[grep('SoilStability', f)]) )
 soil_stab_full <- soil_stab %>% 
   group_by(ESD) %>%
   filter(n() ==3) %>% 
-  pivot_longer( cols = LOW:HIGH) %>% 
-  pivot_wider(
-    names_from = c(SETTING, name),
-    names_sep = "-",
-    values_from = value )
+  ungroup() %>% 
+  pivot_longer( cols = LOW:HIGH, names_to = 'ESTIMATE', values_to = 'STABILITY') %>% 
+  group_by(SETTING, ESTIMATE) %>% 
+  mutate(MEDIAN = median(STABILITY))
 
+ggplot(soil_stab_full, aes(x = SETTING, y = STABILITY, colour = ESTIMATE)) +
+  geom_jitter(height = 0.1) +
+  theme_bw() +
+  ylim(0,6) +
+  geom_point(aes(y = MEDIAN), colour = 'black', shape = 15) +
+  scale_x_discrete(limits = c("CANOPY", "SITE", "INTERSPACES"), 
+                   labels = c('Under Canopy', 'Site Median', 'Interspaces')) 
 
-ggparcoord(soil_stab_full,
-    columns = c(2, 6, 4),
-    showPoints = TRUE, 
-    scale="globalminmax",
-    title = "No scaling",
-    alphaLines = 0.3
-    )
 
 ```
 
