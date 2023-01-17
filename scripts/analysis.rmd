@@ -1,0 +1,35 @@
+---
+title: "Soil Erosion Potential"
+output:
+  pdf_document: default
+  word_document: default
+header-includes:
+ - \usepackage[width=\textwidth]{caption}
+ - \usepackage{wrapfig}
+always_allow_html: yes
+csl: ../citations/citations/apa.csl
+bibliography: ../citations/citations/citations.bib
+link-citations: yes
+---
+
+\vspace{-1cm}
+
+# Introduction
+
+AIM uses aggregate soil stability as an indicator of the potential of soil to erosion (@herrick2001field). This metric has been shown to correlate strongly to the effects of rain, and wind, on the loss of soil from areas (@herrick2001field). While the relationships between soil erosion, plant cover and functional type (@cerda1998soil, @greene1994role, @de2023functional), landform position (@swanson1988landform, @de2023functional), slope shape (e.g. concave, convex) (@canton2009aggregate, @de2023functional), soil texture (@), and the cover of biocrusts are oftentimes complex (@leys1998influence), the quantitative observation that soils with low stability have greater rates of erosion are always evident (@herrick2018rangeland). 
+
+For this report, soil aggregates refer to relatively large coherent portions of soils (> 2mm diameter). Soil aggregates are continually being created by processes, such as the initial attraction of negatively charged clay and positively charged salts on silt particles, followed by cementation. Cementation is often achieved through organic matter, calcium carbonates, which then leads to biological processes. These involve the creation of numerous long molecules (generally polysaccharides), by organisms such as bacteria especially filamentous cyanobacteria and fungal hyphae,  which act as 'glue' between these particles (@moonilall2019aggregates).
+
+Soil aggregates are continually being broken apart by THESE PROCESSES. When many more soil aggregates are being broken apart than are created areas become susceptible to erosion from water, or wind (@leys1998influence). 
+
+... Current concerns regarding soil stability are to be compounded with climate change (@munson2011responses), soil crusts, perhaps with the exception of 'light' cyanobacteria, are slow to regenerate. More episodic, and intense rainfalls, badddd. (@chen2018effects)
+
+
+
+
+
+
+
+\newpage
+
+# References 
