@@ -14,6 +14,14 @@ link-citations: yes
 
 \vspace{-1cm}
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+knitr::opts_chunk$set(dpi = 300) 
+knitr::opts_chunk$set(message = F)
+knitr::opts_chunk$set(warning = F)
+knitr::opts_chunk$set(fig.align="left") 
+```
+
 # Introduction
 
 AIM uses aggregate soil stability as an indicator of the potential of soil to erosion (@herrick2001field). This metric has been shown to correlate strongly to the effects of rain, and wind, on the loss of soil from areas (@herrick2001field). While the relationships between soil erosion, plant cover and functional type (@cerda1998soil, @greene1994role, @de2023functional), landform position (@swanson1988landform, @de2023functional), slope shape (e.g. concave, convex) (@canton2009aggregate, @de2023functional), soil texture (@), and the cover of biocrusts are oftentimes complex (@leys1998influence), the quantitative observation that soils with low stability have greater rates of erosion are always evident (@herrick2018rangeland). 
@@ -41,9 +49,46 @@ Finally, we have few replicates per site. Soil stability is measured at only 18 
 
 # Methods
 
+```{r load libraries}
+
+library(tidyverse)
+library(hrbrthemes)
+library(GGally)
+library(viridis)
+
+```
+
 Nearly all Ecological Sites Descriptions contained soil stability values for their locations: 1) A site median, 2) Interspace (the distance between plant canopies) median, 3) an Under Canopy (space beneath plant cover) median. To calculate these estimates for ESD's which were missing them, the mode of the medians for eahc of the three variables were calculated.
 
 The median was also calculated for each of these three attributes at each Ecological Sites which lacked descriptions.
+
+```{r feature engineering}
+
+praw <- '../data/raw'
+f <- list.files(praw)
+
+soil_stab <- read.csv( file.path(praw, f[grep('SoilStability', f)]) )
+
+soil_stab_full <- soil_stab %>% 
+  group_by(ESD) %>%
+  filter(n() ==3) %>% 
+  pivot_longer( cols = LOW:HIGH) %>% 
+  pivot_wider(
+    names_from = c(SETTING, name),
+    names_sep = "-",
+    values_from = value )
+
+
+ggparcoord(soil_stab_full,
+    columns = c(2, 6, 4),
+    showPoints = TRUE, 
+    scale="globalminmax",
+    title = "No scaling",
+    alphaLines = 0.3
+    )
+
+```
+
 
 # Results
 
