@@ -26,63 +26,153 @@ knitr::opts_chunk$set(fig.align="left")
 
 AIM uses the soil stability of *(macro)aggregates* as an indicator of the potential of soil to erosion (soil erodibility) (@AIM2021manual, @herrick2001field). Soil aggregates are groups of soil particles which clump together to form individual strongly connected (micro)aggregates, which may then continually clump together with each other and organic matter to form larger less weakly connected (macro)aggregates (@totsche2018microaggregates). High numbers of macroaggregates at the soil surface have been shown to correlate strongly to the effects of rain, and wind, on the loss of soil from areas (@barthes2002aggregate, @herrick2001field). While the relationships between soil erosion, plant cover and functional type (@cerda1998soil, @greene1994role, @de2023functional), landform position (@swanson1988landform, @de2023functional), slope shape (e.g. concave, convex) (@canton2009aggregate, @de2023functional), and the cover of biocrusts are oftentimes complex (@leys1998influence), the quantitative observation that soils with low macroaggregate stability have greater rates of erodibility are always evident (@herrick2018rangeland). 
 
-For this report, soil aggregates refer to relatively large coherent portions of soils (> 2mm diameter). Soil microaggregates are continually being slowly created by processes, such as the initial attraction of negatively charged clay and positively charged salts on silt particles, followed by cementation (@totsche2018microaggregates). Cementation is often achieved through organic matter and/or calcium carbonates and oxides, which then leads to biological processes. These involve the creation of numerous long organic (Carbon containing) molecules (generally polysaccharides), by organisms such as bacteria especially filamentous cyanobacteria, fungal hyphae, and plant roots, which act as 'glue' between these particles and will create macroaggregates (@six2004history, @totsche2018microaggregates, @moonilall2019aggregates). Soil macroaggregates in non agricultural lands are continually quickly formed, and subsequently broken back into modified microaggregates by: certain wildland fire conditions (@urbanek2013aggregates), rapid drying and wetting, freeze-thaw cycles, some chemical interactions with water, and compaction (@le1996aggregate). When many more soil aggregates are being broken apart than are created areas become susceptible to erosion from water, or wind (@leys1998influence, @six2004history). 
+For this report, soil aggregates refer to relatively large coherent portions of soils (> 2mm diameter) (@AIM2021manual). Soil microaggregates are continually being slowly created by processes, such as the initial attraction of negatively charged clay and positively charged salts on silt particles, followed by cementation (@totsche2018microaggregates). Cementation is often achieved through organic matter and/or calcium carbonates and oxides, which then leads to biological processes. These involve the creation of numerous long organic (Carbon containing) molecules (generally polysaccharides), by organisms such as bacteria especially filamentous cyanobacteria, fungal hyphae, and plant roots, which act as 'glue' between these particles and will create macroaggregates (@six2004history, @totsche2018microaggregates, @moonilall2019aggregates). Soil macroaggregates in non agricultural lands are continually quickly formed, and subsequently broken back into modified microaggregates by: certain wildland fire conditions (@urbanek2013aggregates), rapid drying and wetting, freeze-thaw cycles, some chemical interactions with water, and compaction (@le1996aggregate). When many more soil aggregates are being broken apart than are created areas become susceptible to erosion from water, or wind (@leys1998influence, @six2004history). 
 
+Soil erosion decreases water infiltration to soil and becomes available to plants, reduces soil nutrients available to plants and microorganisms, removes soil carbon which foster soil microorganisms, and decrease root depth and space for plants; all leading to decreases in plant diversity, abundance and production (reviewed in @pimentel1998ecology). Accordingly, soil erosion may lead to the inability of an Ecological Site to support certain plant species essential to the maintenance of the site @bestelmeyer2015desertification. In most instances this will tend to lead a different *state* and *phase*, generally with fewer ecosystem occurrences, to occur on the site (@bestelmeyer2015desertification). However, in severe instances soil erosion will lead to conversion of a site into a state from which land management agencies are unlikely to be capable to restore it to an area providing even few of it's potential ecosystem services (@bestelmeyer2015desertification). Realistically in nearly all semi-arid lands utilized as rangelands, this equates to desertification. 
 
 ... Current concerns regarding soil stability are to be compounded with climate change (@munson2011responses), soil crusts, perhaps with the exception of 'light' cyanobacteria, are slow to regenerate. More episodic, and intense rainfalls, badddd. (@chen2018effects)
 
-Soil stability will be one of the only core-indicators in this report that is treated as a *categorical* variable. The way that crews collect soil stability means that it is an ordinal categorical variable, i.e. an object with discrete categories which are ordered. 
-
-Soil stability measures are on a scale of 1-6, where '1' indicates little to no stability and '6' indicates very high stability. While it is tempting to treat these values as *continuous*, it is generally inappropriate to do so. These values represent data which are *ordinal categorical variables*, and while these types of information *can* readily be, and are oftentimes, treated as continuous values they should meet a few conditions first.  One condition where ordinal variables can be transformed is when the values they represent are at equal distances from each other, *e.g.*  if we estimate the number of number of jelly beans in a jar from 1-10, where 1 encompasses 1-10 beans, and 2 21-30 beans etc., However, our rankings of 0-6 all show different 'distances' between them. For example:
+Soil stability will be one of the only core-indicators in this report that is treated as a *categorical* variable. The way that crews collect soil stability means that it is an ordinal categorical variable, i.e. an object with discrete categories which are ordered. Soil stability measures are on a scale of 1-6, where '1' indicates little to no stability and '6' indicates very high stability. While it is tempting to treat these values as *continuous*, it is generally inappropriate to do so. These values represent data which are *ordinal categorical variables*, and while these types of information *can* readily be, and are oftentimes, treated as continuous values they should meet a few conditions first.  One condition where ordinal variables can be transformed is when the values they represent are at equal distances from each other, *e.g.*  if we estimate the number of number of jelly beans in a jar from 1-10, where 1 encompasses 1-10 beans, and 2 21-30 beans etc., However, our rankings of 0-6 all show different 'distances' between them. For example:
 
 > "Stability class 4: 10–25% of soil remains on sieve after five dipping cycles;  
-   Stability class 5: 25–75% of soil remains on sieve after five dipping cycles"
-> `r tufte::quote_footer('--- AIM 2021, V. 1 p. 51')`
+    Stability class 5: 25–75% of soil remains on sieve after five dipping cycles" 
+>  `r tufte::quote_footer('--- AIM 2021, V. 1 p. 51')`
 
-As can readily be seen, from these two classes which are the most similar, breaks are of wildly different sizes (15% and 50%), and clearly violate this assumption. Another condition where ordinal values can be treated as continuous is when they represent a great range. E.g. if you had a quiz of 100 questions, and you can get each answer either 'Correct', or 'Wrong', we could turn your score into a continuous value, and combine it with other scores to get an aggregate. Lenient opinions differ on whether you should have 10+ or 5+ classes to do this (CITE). 
-
-Finally, we have few replicates per site. Soil stability is measured at only 18 locations per plot, roughly only half of the recommended observations for using parametric statistics. While non-parametric statistics are often applied to numeric data, they perform very well with small samples sizes. Accordingly, we end up in relatively the same place statistically by treating these values as ordinal categorical variables.
+As can readily be seen, from these two classes which are the most similar, breaks are of wildly different sizes (15% and 50%), and clearly violate this assumption. Another condition where ordinal values can be treated as continuous is when they represent a great range. E.g. if you had a quiz of 100 questions, and you can get each answer either 'Correct', or 'Wrong', we could turn your score into a continuous value, and combine it with other scores to get an aggregate. Lenient opinions differ on whether you should have 10+ or 5+ classes to do this (CITE). Finally, we have few replicates per site. Soil stability is measured at only 18 locations per plot, roughly only half of the recommended observations for using parametric statistics. While non-parametric statistics are often applied to numeric data, they perform very well with small samples sizes. Accordingly, we end up in relatively the same place statistically by treating these values as ordinal categorical variables.
 
 # Methods
 
 ```{r load libraries}
-
 library(tidyverse)
-library(hrbrthemes)
-library(GGally)
-library(viridis)
-
 ```
 
-Nearly all Ecological Sites Descriptions contained soil stability values for their locations: 1) A site median, 2) Interspace (the distance between plant canopies) median, 3) an Under Canopy (space beneath plant cover) median. To calculate these estimates for ESD's which were missing them, the mode of the medians for eahc of the three variables were calculated.
+The first step in assessing whether the field office was achieving benchmark conditions regarding soil stability was to impute the measurements for these values at Ecological Sites which were lacking Descriptions, or which had incomplete descriptions. Similar to section (X.X), these values were imputed by *feature engineering*, however since they were ordinal categorical variables the *median* of the values were used. 
 
-The median was also calculated for each of these three attributes at each Ecological Sites which lacked descriptions.
-
-```{r feature engineering}
+```{r import data and feature engineering missing benchmarks}
 
 praw <- '../data/raw'
 f <- list.files(praw)
 
 soil_stab <- read.csv( file.path(praw, f[grep('SoilStability', f)]) )
 
-soil_stab_full <- soil_stab %>% 
+ss_full <- soil_stab %>% 
   group_by(ESD) %>%
   filter(n() ==3) %>% 
+  ungroup()
+ss_two <- soil_stab %>%  # SITES with two metrics, in all instances
+  group_by(ESD) %>% # simply missing the average.
+  filter(n() == 2) 
+ss_one <- soil_stab %>% # sites with only a single metric
+  group_by(ESD) %>% 
+  filter(n() == 1)
+
+ss_median <- soil_stab %>% 
   ungroup() %>% 
   pivot_longer( cols = LOW:HIGH, names_to = 'ESTIMATE', values_to = 'STABILITY') %>% 
   group_by(SETTING, ESTIMATE) %>% 
-  mutate(MEDIAN = median(STABILITY))
+  mutate(MEDIAN = median(STABILITY)) %>% 
+  add_count(name = 'SAMPLE')
 
-ggplot(soil_stab_full, aes(x = SETTING, y = STABILITY, colour = ESTIMATE)) +
-  geom_jitter(height = 0.1) +
-  theme_bw() +
-  ylim(0,6) +
-  geom_point(aes(y = MEDIAN), colour = 'black', shape = 15) +
-  scale_x_discrete(limits = c("CANOPY", "SITE", "INTERSPACES"), 
-                   labels = c('Under Canopy', 'Site Median', 'Interspaces')) 
-
+prcnt <- paste0(round( length(unique(ss_full$ESD))/length(unique(soil_stab$ESD)) * 100, 1), '%')
 
 ```
+
+```{r, plot imputed benchmarks, eval = F}
+
+ss_med_n <- ss_median %>% 
+  ungroup() %>% 
+  select(SETTING, SAMPLE) %>% 
+  distinct()
+
+ggplot(ss_median, aes(x = SETTING, y = STABILITY, colour = ESTIMATE)) +
+  geom_point(aes(y = MEDIAN, fill = ESTIMATE), colour = 'black', shape = 23, size = 5, alpha = 0.9) +
+  geom_jitter(height = 0.1, width = 0.3) +
+  scale_color_manual('Estimate:', values = c('LOW' = '#A6BB8D', 'HIGH' = '#3C6255'), 
+                     labels = c('Lower', 'Upper')) + 
+  scale_fill_manual('Imputed Median:', values = c('LOW' = '#bb8da6', 'HIGH' = '#8da6bb'),
+                    labels = c('Upper', 'Lower'), guide = guide_legend(reverse=TRUE)) +
+  theme_bw() +
+  ylim(0,6) +
+    theme(plot.title = element_text(hjust = 0.5, size = 12),
+        panel.grid.major.y =  element_blank(),
+        legend.text = element_text(size=10),
+        axis.text = element_text(color = "grey20", size = 9),  
+        axis.title.x = element_text(vjust=-2.5),
+        legend.position = 'bottom') +
+  labs(title = 'Estimates of Median Soil Stability',
+       y = 'Soil Stability', x = 'Condition') +
+  scale_x_discrete(limits = c("CANOPY", "SITE", "INTERSPACES"), 
+                   labels = c('Under Canopy', 'Site Median', 'Interspaces')) +
+  
+  annotate("text", x='INTERSPACES', y=0.5, label =
+             paste0("n = ", ss_med_n[ss_med_n$SETTING=='INTERSPACES',2] )) +
+  annotate("text", x='CANOPY', y=0.5, label = 
+             paste0("n = ", ss_med_n[ss_med_n$SETTING=='CANOPY',2] )) +
+  annotate("text", x='SITE', y=0.5, label = 
+             paste0("n = ", ss_med_n[ss_med_n$SETTING=='SITE',2] )) 
+
+ggsave(plot = last_plot(), device = 'png', height = 11, units = 'cm', 
+       path = '../results', filename = 'SoilStab_benchmark.png')
+
+rm(ss_med_n)
+```
+
+A relatively high amount of Ecological Sites Descriptions (`r length(unique(ss_full$ESD))` of `r length(unique(soil_stab$ESD))`, `r prcnt`) contained soil stability reference benchmarks under two conditions as well as a site 'average':  
+
+    1) Interspaces (the distance between plant canopies)    
+    2) Under Canopy (space beneath plant cover)   
+    3) Site 'average' (hereafter: median)  
+    
+\begin{wrapfigure}{r}{0.5\textwidth}
+  \centering
+    \includegraphics[width=0.5\textwidth]{../results/SoilStab_benchmark.png}
+  \caption{Specified benchmarks at all ESDs which included all three metrics and derived imputed value}
+\end{wrapfigure}
+
+A hand-full of sites (n = `r length(unique(ss_two$ESD))`) contained values for both under canopies and interspaces, but lacked a site wide median;  a dozen sites had only one value (n = `r nrow(ss_one[ss_one$SETTING=='SITE',])` 'site', and n = `r nrow(ss_one[ss_one$SETTING=='INTERSPACES',])` 'interspaces'). To calculate these estimates for ESD's which were missing them, the median for each category was gathered using each observation (Figure 1, Table 1). The missing values were then imputed in each ESD which was missing a value, as well as for each ES which was missing all values. 
+
+```{r Impute missing values into all ESDs and save}
+
+missing <- ss_median %>% 
+  group_by(ESD) %>% 
+  filter(n() < 6) 
+tomake <- missing %>% 
+  distinct(ESD) %>% 
+  pull(ESD)
+
+medians <- ss_median %>% 
+  distinct(SETTING, ESTIMATE, MEDIAN)
+
+missing <- tibble(
+  ESD = rep(tomake, each = 6),
+  SETTING = rep(c('INTERSPACES', 'CANOPY', 'SITE'), each = 2, times = length(tomake)),
+  ESTIMATE = rep(c('LOW', 'HIGH'), each = 1, times = length(tomake)*3)
+) %>% 
+  left_join(., medians) %>% 
+  left_join(., missing, by = c('ESD', 'SETTING', 'ESTIMATE', 'MEDIAN')) %>% 
+  rowwise() %>% 
+  mutate(STABILITY = replace_na(STABILITY, MEDIAN)) 
+
+ss_median %>% 
+  group_by(ESD) %>% 
+  filter(n() == 6) %>% 
+  bind_rows(., missing) %>% 
+  select(-SAMPLE)
+
+# write.csv(ss_median, '../data/processed/imputed_medians.csv', row.names = F)
+
+rm(missing, tomake, medians)
+```
+
+
+```{r remove some writing variables}
+rm(prcnt, ss_two, ss_one, ss_full)
+```
+
+
+
+
+\newpage 
 
 
 # Results
