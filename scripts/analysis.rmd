@@ -46,6 +46,8 @@ As can readily be seen, from these two classes which are the most similar, break
 
 ```{r load libraries}
 library(tidyverse)
+library(spsurvey)
+
 ```
 
 The first step in assessing whether the field office was achieving benchmark conditions regarding soil stability was to impute the measurements for these values at Ecological Sites which were lacking Descriptions, or which had incomplete descriptions. Similar to section (X.X), these values were imputed by *feature engineering*, however since they were ordinal categorical variables the *median* of the values were used. 
@@ -169,6 +171,58 @@ rm(missing, tomake, medians)
 
 ```{r remove some writing variables}
 rm(prcnt, ss_two, ss_one, ss_full)
+```
+
+The original AIM soil stability data were imported from *DB*, and the median of Soil stability for each plot, under both of the conditions, and a site average, were calculated. These values then underwent categorical analysis using 'spsurvey', with confidence interval of 0.8, (@dumelle2022sp), and the 'local' (default) variance estimator.
+
+
+Subsequent to generating the categorical outcomes from sp, confidence estimates were calculated using *'binconf'* from the Hmisc package with an alpha of 0.2, confidence interval of 0.8,  (@harrel2022hmisc). 
+
+```{r}
+cat_analysis(dframe = , siteID = , vars = , sub = , subpops = ,  sweight = , vartype = , conf = 80, 
+              vartype = 'Local')
+
+
+library(Hmisc)
+
+
+WilsonCanHaveFun <- function(data, outcome, conf, ...){
+  
+  if(missing(conf)){conf <- 0.2}
+  if(missing(outcome)){
+    
+    col_classes <- sapply(FUN = class, data)
+    lgl_cols <- grep('logical', col_classes)
+    
+      if(length(lgl_cols) > 1){
+        stop('No "success" columns specified to function, and input data frame contains more than one "logical" type column; please specify the "outcome" column')
+        } else {
+          outcome <- colnames(data)[lgl_cols]
+          message('No column supplied to the "Success" argument, `', 
+                 substitute(outcome),  '` used as the outcome variable') } 
+  }
+  
+  outcome_col <- as.character(substitute(outcome))
+  outcome_var <- data[outcome_col] == T
+  
+  prediction <- binconf(x = length(outcome_var[outcome_var==T]) , 
+          n = length(outcome_var), alpha = (1 - conf), ... )
+  
+  return(prediction)
+}
+
+
+WilsonCanHaveFun(data = df , outcome = 'Outcome'
+                 )
+
+
+df <- data.frame(
+  Stratum = rep('Prussia', n = 20),
+  Outcome = as.logical( sample(c(T,F), size = 20, replace = T) ),
+  water = as.logical(sample(c(T,F), size = 20, replace = T))
+)
+
+
 ```
 
 
