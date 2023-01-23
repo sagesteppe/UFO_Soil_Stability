@@ -39,10 +39,12 @@ WilsonCanHaveFun <- function(data, outcome, conf, ...){
     data <- st_drop_geometry(data)
     outcome_var <- data[outcome_col] == T
   }
-  prediction <- Hmisc::binconf(x = length(outcome_var[outcome_var==T]) , 
-                               n = length(outcome_var), alpha = (1 - conf), ... )
+  
+  prediction <- data.frame(Hmisc::binconf(x = length(outcome_var[outcome_var==T]) , 
+                               n = length(outcome_var), alpha = (1 - conf), ...))
   #  prediction <-
   #    data.frame(cbind(Variable = deparse(substitute(data)), prediction))
   
   return(prediction)
 }
+

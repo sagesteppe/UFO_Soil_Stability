@@ -81,7 +81,6 @@ ss_median <- soil_stab %>%
 
 prcnt <- paste0(round( length(unique(ss_full$ESD))/length(unique(soil_stab$ESD)) * 100, 1), '%')
 
-rm(soil_stab)
 ```
 
 ```{r, plot imputed benchmarks, eval = F}
@@ -173,7 +172,7 @@ rm(missing, tomake, medians)
 
 
 ```{r remove some writing variables}
-rm(prcnt, ss_two, ss_one, ss_full)
+rm(prcnt, ss_two, ss_one, ss_full, soil_stab)
 ```
 
 
@@ -203,6 +202,8 @@ ss <- read.csv(file.path(praw, f[grep('AIM', f)])) %>%
 ss_sum <- ss %>% 
   distinct(OBJECTID, Type, .keep_all = T) %>% 
   select(-Aggregate_Stability, -Vegetation_Type)
+
+rm(ss)
 ```
 
 
@@ -243,7 +244,7 @@ ss_sum <- st_intersection(pts, ss_sum) %>%
   mutate(ECO.SITE = if_else(PLOTID == 'GR-035', 'R036XY114CO', ECO.SITE),
          PLOTID = if_else(PLOTID == 'GR-035', 'GR-025', PLOTID))
 
-rm(header, td_summary, ufo_extent, pts, esd_class)
+rm(header, td_summary,  pts, esd_class)
 ```
 
 ```{r retrieve and associate plot weights}
@@ -266,10 +267,9 @@ The original AIM soil stability data were pulled from Terradat as a comma sepera
 
 Subsequent to generating the categorical outcomes from sp, confidence estimates were calculated using *'binconf'*, in the Hmisc package,  with an $\alpha$ = 0.2, confidence interval of 0.8, (@harrel2022hmisc). 
 
-```{r Classify median of plot values as Meeting of Failing, eval = F}
+```{r Classify median of plot values as Meeting of Failing, warning=FALSE}
 
 # Calculate the value for the OVERALL PLOT
-
 dat2run <- ss_sum %>% 
   distinct(PLOTID, .keep_all = T) 
 
@@ -279,16 +279,17 @@ ss_median_all <- ss_median %>%
   select(ESD, STABILITY) %>% 
   bind_rows(., data.frame(ESD = 'UNKNOWN', STABILITY = 4))
 
-overall_stability <- left_join(dat2run, ss_median_all, by = c('ECO.SITE' = 'ESD')) %>% 
+overall_stability_df <- left_join(dat2run, ss_median_all, 
+                               by = c('ECO.SITE' = 'ESD')) %>% 
   mutate(STABILITY = if_else(is.na(STABILITY), 4, STABILITY), 
+         Type = 'Site',
          Meeting = if_else(SiteStability >= STABILITY, T, F))
 
-overall_stability <- cat_analysis(dframe = overall_stability, siteID = 'PLOTID', vars = 'Meeting',
-             stratumID = 'ECO.SITE',  subpops = 'AoInference',  weight = 'WghtPerPlot',
-             vartype = 'Local', conf = 80)
+overall_stab <- cat_analysis(
+  dframe = overall_stability_df, siteID = 'PLOTID', vars = 'Meeting',
+  subpops = 'AoInference',  weight = 'WghtPerPlot', vartype = 'Local', conf = 80)
 
 # Under canopy stability
-
 dat2run <- ss_sum %>% 
   filter(Type == 'Canopy')
 
@@ -298,16 +299,16 @@ ss_median_canopy <- ss_median %>%
   select(ESD, STABILITY) %>% 
   bind_rows(., data.frame(ESD = 'UNKNOWN', STABILITY = 4)) # ALSO A 4 FOR THE LOW MEDIAN
 
-canopy_stability <- left_join(dat2run, ss_median_canopy, by = c('ECO.SITE' = 'ESD')) %>% 
+canopy_stability_df <- left_join(dat2run, ss_median_canopy,
+                              by = c('ECO.SITE' = 'ESD')) %>% 
   mutate(STABILITY = if_else(is.na(STABILITY), 4, STABILITY), 
-         Meeting = if_else(SiteStability >= STABILITY, T, F))
+         Meeting = if_else(SiteStability >= STABILITY, T, F)) 
 
-canopy_stability <- cat_analysis(dframe = canopy_stability, siteID = 'PLOTID', vars = 'Meeting',
-             stratumID = 'ECO.SITE',  subpops = 'AoInference',  weight = 'WghtPerPlot',
-             vartype = 'Local', conf = 80)
+canopy_stab <- cat_analysis(
+  dframe = canopy_stability_df, siteID = 'PLOTID', vars = 'Meeting',
+  subpops = 'AoInference',  weight = 'WghtPerPlot', vartype = 'Local', conf = 80)
 
 # Interspaces stability
-
 dat2run <- ss_sum %>% 
   filter(Type == 'Interspace')
 
@@ -317,66 +318,42 @@ ss_median_interspace <- ss_median %>%
   select(ESD, STABILITY) %>% 
   bind_rows(., data.frame(ESD = 'UNKNOWN', STABILITY = 3)) 
 
-interspace_stability_df <- left_join(dat2run, ss_median_interspace, by = c('ECO.SITE' = 'ESD')) %>% 
+interspace_stability_df <- left_join(dat2run, ss_median_interspace,
+                                  by = c('ECO.SITE' = 'ESD')) %>% 
   mutate(STABILITY = if_else(is.na(STABILITY), 4, STABILITY), 
          Meeting = if_else(SiteStability >= STABILITY, T, F))
 
-interspace_stability <- cat_analysis(dframe = interspace_stability_df, siteID = 'PLOTID', vars = 'Meeting',
-             stratumID = 'ECO.SITE',  subpops = 'AoInference',  weight = 'WghtPerPlot',
-             vartype = 'Local', conf = 80)
-
-
-
- df <- data.frame(
-   Stratum = rep('Prussia', n = 20),
-   Outcome = as.logical( sample(c(T,F), size = 20, replace = T) ),
-   Water = as.logical(sample(c(T,F), size = 20, replace = T))
- )
+interspace_stab <- cat_analysis(
+  dframe = interspace_stability_df, siteID = 'PLOTID', vars = 'Meeting',
+  subpops = 'AoInference',  weight = 'WghtPerPlot', vartype = 'Local', conf = 80)
  
- 
-out <- WilsonCanHaveFun( data = df, outcome = 'Outcome' )
- 
-out <- WilsonCanHaveFun(data = overall_stability, outcome = 'Meeting')
+# spsurvey likely doing a bit more than we can match... it always off by a few percent.
 
-WilsonCanHaveFun <- function(data, outcome, conf, ...){
-  
-  if(missing(conf)){conf <- 0.2}
-  if(missing(outcome)){
-    
-    col_classes <- sapply(FUN = class, data)
-    lgl_cols <- grep('logical', col_classes)
-    
-      if(length(lgl_cols) > 1){
-        stop('No "success" columns specified to function, and input data frame contains more than one "logical" type column; please specify the "outcome" column')
-        } else {
-          outcome <- colnames(data)[lgl_cols] 
-          message('No column supplied to the "Success" argument, `', 
-                 substitute(outcome),  '` used as the outcome variable') } 
-  }
-  
-  outcome_col <- as.character(substitute(outcome))
-  
-  inType <- class(data)
-  out <- if(length(grep('sf', inType)) == 0){
-      outcome_var <- data[outcome_col] == T 
-    } else{ 
-        data <- st_drop_geometry(data)
-        outcome_var <- data[outcome_col] == T
-    }
-  prediction <- Hmisc::binconf(x = length(outcome_var[outcome_var==T]) , 
-          n = length(outcome_var), alpha = (1 - conf), ... )
-#  prediction <-
-#    data.frame(cbind(Variable = deparse(substitute(data)), prediction))
-  
-  return(prediction)
-}
+# l <- split(overall_stability, overall_stability$AoInference)  
+# lapply(l, WilsonCanHaveFun, outcome = 'Meeting')
+# out <- WilsonCanHaveFun(data = overall_stability, outcome = 'Meeting')
 
+
+# create a writing summary dataframe to pull values from 
+wr_sum <- bind_rows(canopy_stability_df, interspace_stability_df, overall_stability_df) %>% 
+  select(PLOTID, AoInference, Type, Meeting, ECO.SITE) %>% 
+  st_drop_geometry()
+
+rm(WilsonCanHaveFun, dat2run, ss_median_interspace, ss_median_canopy, ss_median_all,
+   canopy_stability_df, interspace_stability_df, overall_stability_df)
+```
+
+```{r Plot Results of Soil Stability}
 
 ```
+
 
 \newpage 
 
 # Results
+
+Of the `r distinct(wr_sum, PLOTID) |> nrow()` sites analyzed `r filter(wr_sum, Meeting==T & Type=='Site') |> nrow()` were meeting the benchmark for median cover across the entire plot, a similar number of plots were meeting the lower benchmarks for canopy (`r filter(wr_sum, Meeting==T & Type=='Canopy') |> nrow()`) and interspaces (`r filter(wr_sum, Meeting==T & Type=='Interspace') |> nrow()`). Across the general UFO field office `r filter(overall_stab, Category==T, Subpopulation=='SampleFrame')$Estimate.P`% of land was meeting this benchmark condition, the estimates of uncertainty around the total area of the field office which were meeting these objectives were relatively narrow, (80% Confidence Interval (CI) `r filter(overall_stab, Subpopulation == 'SampleFrame', Category== T)$LCB80Pct.P`% - `r filter(overall_stab, Subpopulation == 'SampleFrame', Category== T)$UCB80Pct.P`%). Of the three management areas with higher management objectives, `r filter(overall_stab, Category==T, Estimate.P >= 80) %>% nrow()` had estimates meeting their goals, and `r filter(overall_stab, Category==T, UCB80Pct.P >= 80) %>% nrow()` of their relatively broad confidence intervals overlap their goals.
+
 
 \newpage
 
