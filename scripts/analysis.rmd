@@ -6,6 +6,7 @@ output:
 header-includes:
  - \usepackage[width=\textwidth]{caption}
  - \usepackage{wrapfig}
+ - \usepackage[font=small,labelfont=bf]{caption}
 always_allow_html: yes
 csl: ../citations/citations/apa.csl
 bibliography: ../citations/citations/citations.bib
@@ -57,7 +58,7 @@ The first step in assessing whether the field office was achieving benchmark con
 praw <- '../data/raw'
 f <- list.files(praw)
 
-soil_stab <- read.csv( file.path(praw, f[grep('SoilStability', f)]) )
+soil_stab <- read.csv( file.path(praw, f[grep('Benchmark', f)]) )
 
 ss_full <- soil_stab %>% 
   group_by(ESD) %>%
@@ -124,7 +125,7 @@ rm(ss_med_n)
 A relatively high amount of Ecological Sites Descriptions (`r length(unique(ss_full$ESD))` of `r length(unique(soil_stab$ESD))`, `r prcnt`) contained soil stability reference benchmarks under two conditions as well as a site 'average':  
 
     1) Interspaces (the distance between plant canopies)    
-    2) Under Canopy (space beneath plant cover)   
+    2) Under Canopy (areas beneath plant cover)   
     3) Site 'average' (hereafter: median)  
     
 \begin{wrapfigure}{r}{0.5\textwidth}
@@ -133,7 +134,7 @@ A relatively high amount of Ecological Sites Descriptions (`r length(unique(ss_f
   \caption{Specified benchmarks at all ESDs which included all three metrics and derived imputed value}
 \end{wrapfigure}
 
-A hand-full of sites (n = `r length(unique(ss_two$ESD))`) contained values for both under canopies and interspaces, but lacked a site wide median;  a dozen sites had only one value (n = `r nrow(ss_one[ss_one$SETTING=='SITE',])` 'site', and n = `r nrow(ss_one[ss_one$SETTING=='INTERSPACES',])` 'interspaces'). To calculate these estimates for ESD's which were missing them, the median for each category was gathered using each observation (Figure 1, Table 1). The missing values were then imputed in each ESD which was missing a value, as well as for each ES which was missing all values. 
+A hand-full of sites (n = `r length(unique(ss_two$ESD))`) contained values for both under canopies and interspaces, but lacked a site wide median; a dozen sites had only one value (n = `r nrow(ss_one[ss_one$SETTING=='SITE',])` 'site', and n = `r nrow(ss_one[ss_one$SETTING=='INTERSPACES',])` 'interspaces'). To calculate these estimates for ESD's which were missing them, the median for each category was gathered using each observation (Figure 1, Table 1). The missing values were then imputed in each ESD which was missing a value, as well as for each ES which was missing all values. 
 
 ```{r Impute missing values into all ESDs and save}
 
@@ -157,7 +158,7 @@ missing <- tibble(
   rowwise() %>% 
   mutate(STABILITY = replace_na(STABILITY, MEDIAN)) 
 
-ss_median %>% 
+ss_median <- ss_median %>% 
   group_by(ESD) %>% 
   filter(n() == 6) %>% 
   bind_rows(., missing) %>% 
@@ -173,31 +174,48 @@ rm(missing, tomake, medians)
 rm(prcnt, ss_two, ss_one, ss_full)
 ```
 
-The original AIM soil stability data were imported from *DB*, and the median of Soil stability for each plot, under both of the conditions, and a site average, were calculated. These values then underwent categorical analysis using 'spsurvey', with confidence interval of 0.8, (@dumelle2022sp), and the 'local' (default) variance estimator.
 
 
-Subsequent to generating the categorical outcomes from sp, confidence estimates were calculated using *'binconf'* from the Hmisc package with an alpha of 0.2, confidence interval of 0.8,  (@harrel2022hmisc). 
+```{r Import and tidy soil stability info}
 
-```{r}
-cat_analysis(dframe = , siteID = , vars = , sub = , subpops = ,  sweight = , vartype = , conf = 80, 
-              vartype = 'Local')
-
-out <- WilsonCanHaveFun( data = df, outcome = 'Outcome' )
-
-df <- data.frame(
-  Stratum = rep('Prussia', n = 20),
-  Outcome = as.logical( sample(c(T,F), size = 20, replace = T) ),
-  Water = as.logical(sample(c(T,F), size = 20, replace = T))
-)
-
+ss <- read.csv(file.path(praw, f[grep('AIM', f)])) %>% 
+  select(OBJECTID, RecKey, PrimaryKey, starts_with(c('Rating',  'Veg'))) %>% 
+  filter(if_all(Rating1:Veg18, ~ !is.na(.x))) %>% 
+  mutate(across(.col = everything(), ~ na_if(.x, ""))) %>% 
+  pivot_longer(cols = Rating1:Rating18, names_to = 'Position', 
+               values_to = 'Aggregate_Stability') %>% 
+  pivot_longer(cols = Veg1:Veg18, names_to = 'Position_Veg', 
+               values_to = 'Vegetation_Type') %>% 
+  mutate(Position = str_remove(Position, 'Rating'),
+         Position_Veg = str_remove(Position_Veg, 'Veg')) %>% 
+  filter(Position == Position_Veg) %>% 
+  select(-starts_with('Position')) %>% 
+  mutate(Type = if_else(Vegetation_Type %in% c('F', 'G', 'Sh', 'T'), 
+                        'Canopy', 'Interspace')) %>% 
+  group_by(OBJECTID) %>% 
+  mutate(SiteStability = median(Aggregate_Stability)) %>% 
+  group_by(OBJECTID, Type) %>% 
+  mutate(Type_stability = median(Aggregate_Stability)) %>% 
+  add_count(name = 'Sample_n')
+  
+ss_sum <- ss %>% 
+  distinct(OBJECTID, Type, .keep_all = T) %>% 
+  select(-Aggregate_Stability, -Vegetation_Type)
 
 ```
 
+The original AIM soil stability data were imported from *DB*, and the median of Soil stability for each plot, under both of the conditions, and a site average, were calculated. These values then underwent categorical analysis using *cat_analysis*, in the 'spsurvey' package, with confidence interval of 0.8, (@dumelle2022sp), and the 'local' (default) variance estimator.
 
+Subsequent to generating the categorical outcomes from sp, confidence estimates were calculated using *'binconf'*, in the Hmisc package,  with an $\alpha$ = 0.2, confidence interval of 0.8, (@harrel2022hmisc). 
 
+```{r perform calculations to gather estimates, eval = F}
+cat_analysis(dframe = , siteID = , vars = , sub = , subpops = ,  sweight = , 
+             vartype = 'Local', conf = 80)
+
+out <- WilsonCanHaveFun(data = df, outcome = 'Outcome')
+```
 
 \newpage 
-
 
 # Results
 
