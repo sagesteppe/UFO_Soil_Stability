@@ -48,6 +48,7 @@ As can readily be seen, from these two classes which are the most similar, break
 ```{r load libraries}
 library(tidyverse)
 library(spsurvey)
+library(sf)
 source('scripts.R')
 ```
 
@@ -80,6 +81,7 @@ ss_median <- soil_stab %>%
 
 prcnt <- paste0(round( length(unique(ss_full$ESD))/length(unique(soil_stab$ESD)) * 100, 1), '%')
 
+rm(soil_stab)
 ```
 
 ```{r, plot imputed benchmarks, eval = F}
@@ -179,7 +181,7 @@ rm(prcnt, ss_two, ss_one, ss_full)
 ```{r Import and tidy soil stability info}
 
 ss <- read.csv(file.path(praw, f[grep('AIM', f)])) %>% 
-  select(OBJECTID, RecKey, PrimaryKey, starts_with(c('Rating',  'Veg'))) %>% 
+  select(OBJECTID, PrimaryKey, starts_with(c('Rating',  'Veg'))) %>% 
   filter(if_all(Rating1:Veg18, ~ !is.na(.x))) %>% 
   mutate(across(.col = everything(), ~ na_if(.x, ""))) %>% 
   pivot_longer(cols = Rating1:Rating18, names_to = 'Position', 
@@ -201,14 +203,60 @@ ss <- read.csv(file.path(praw, f[grep('AIM', f)])) %>%
 ss_sum <- ss %>% 
   distinct(OBJECTID, Type, .keep_all = T) %>% 
   select(-Aggregate_Stability, -Vegetation_Type)
+```
+
+
+```{r join plots and esd to data}
+
+# read in header which serves as link between SS and and summary data
+header <- read.csv(file.path(praw, f[grep('Header', f)])) %>% 
+  select(PlotKey, PrimaryKey)
+ss_sum <- inner_join(header, ss_sum, by ='PrimaryKey') # all good.
+
+# read in summary data 
+td_summary <- read.csv(file.path(praw, f[grep('Summary', f)])) %>% 
+  select(PrimaryKey, PlotKey, PlotID, Latitude_NAD83, Longitude_NAD83)
+ss_sum <- inner_join(td_summary, ss_sum, by = c('PrimaryKey', 'PlotKey')) # all good
+
+# read in ESD classifications
+esd_class <- read.csv( file.path(praw, f[grep('Tracking', f)]) ) %>% 
+  filter(STATUS == 'SAMPLED') %>% 
+  mutate(ECO.SITE = if_else(ECO.SITE.MATCHED == F, 'UNKNOWN', ECO.SITE)) %>% 
+  select(PlotID = PLOT.ID, ECO.SITE)
+
+# join plots to our ESD's spatially ! spatial_join() with a small buffer. 
+pts <- st_read(
+  '/media/sagesteppe/ExternalHD/aimDB/data/raw/AIM_Sample_Design/AIM_Design_Stratification.shp',
+                quiet = T) %>% 
+  st_transform(26913) %>% 
+  st_buffer(100) %>% 
+  select(PLOTID, STRATUM)
+
+ss_sum <- ss_sum %>% 
+  st_as_sf(crs = 4269,
+           coords = c(x = 'Longitude_NAD83', y = 'Latitude_NAD83')) %>% 
+  st_transform(26913) %>% 
+  select(-PlotID)
+
+ss_sum <- st_intersection(pts, ss_sum) %>% 
+  left_join(., esd_class, by = c('PLOTID' = 'PlotID')) %>% 
+  mutate(ECO.SITE = if_else(PLOTID == 'GR-035', 'R036XY114CO', ECO.SITE),
+         PLOTID = if_else(PLOTID == 'GR-035', 'GR-025', PLOTID))
+
+rm(header, td_summary, ufo_extent, pts, esd_class)
+```
+
+```{r retrieve and associated plot weights}
 
 ```
 
-The original AIM soil stability data were imported from *DB*, and the median of Soil stability for each plot, under both of the conditions, and a site average, were calculated. These values then underwent categorical analysis using *cat_analysis*, in the 'spsurvey' package, with confidence interval of 0.8, (@dumelle2022sp), and the 'local' (default) variance estimator.
+
+The original AIM soil stability data were pulled from Terradat as a comma seperated values (CSV) table and imported to R. The median of Soil stability for each plot, under both of the conditions, and a site average, were calculated. These values then underwent categorical analysis using *cat_analysis*, in the 'spsurvey' package, with confidence interval of 0.8, (@dumelle2022sp), and the 'local' (default) variance estimator.
 
 Subsequent to generating the categorical outcomes from sp, confidence estimates were calculated using *'binconf'*, in the Hmisc package,  with an $\alpha$ = 0.2, confidence interval of 0.8, (@harrel2022hmisc). 
 
 ```{r perform calculations to gather estimates, eval = F}
+
 cat_analysis(dframe = , siteID = , vars = , sub = , subpops = ,  sweight = , 
              vartype = 'Local', conf = 80)
 
