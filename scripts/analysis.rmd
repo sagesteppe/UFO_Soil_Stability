@@ -246,8 +246,19 @@ ss_sum <- st_intersection(pts, ss_sum) %>%
 rm(header, td_summary, ufo_extent, pts, esd_class)
 ```
 
-```{r retrieve and associated plot weights}
+```{r retrieve and associate plot weights}
 
+wghts <- read.csv( file.path(praw, f[grep('Weights', f)])) %>% 
+  select(WghtPerPlot, STRATUM = Stratum, AoInference = Area)
+
+ss_sum <- read.csv( file.path(praw, f[grep('Interence', f)])) %>% 
+  select(PLOTID = Plot.ID, AoInference) %>% 
+  right_join(., ss_sum) %>% 
+  mutate(STRATUM = str_remove(str_extract(PLOTID, '^.*-'), '-')) %>% 
+  left_join(., wghts, by = c('STRATUM','AoInference')) %>% 
+  st_as_sf()
+
+rm(wghts)
 ```
 
 
@@ -255,12 +266,70 @@ The original AIM soil stability data were pulled from Terradat as a comma sepera
 
 Subsequent to generating the categorical outcomes from sp, confidence estimates were calculated using *'binconf'*, in the Hmisc package,  with an $\alpha$ = 0.2, confidence interval of 0.8, (@harrel2022hmisc). 
 
-```{r perform calculations to gather estimates, eval = F}
+```{r Classify median of plot values as Meeting of Failing, eval = F}
 
-cat_analysis(dframe = , siteID = , vars = , sub = , subpops = ,  sweight = , 
+# Calculate the value for the OVERALL PLOT
+
+dat2run <- ss_sum %>% 
+  distinct(PLOTID, .keep_all = T) 
+
+ss_median_all <- ss_median %>% 
+  filter(SETTING == 'SITE', ESTIMATE == 'LOW') %>% 
+  distinct() %>% 
+  select(ESD, STABILITY) %>% 
+  bind_rows(., data.frame(ESD = 'UNKNOWN', STABILITY = 4))
+
+overall_stability <- left_join(dat2run, ss_median_all, by = c('ECO.SITE' = 'ESD')) %>% 
+  mutate(STABILITY = if_else(is.na(STABILITY), 4, STABILITY), 
+         Meeting = if_else(SiteStability >= STABILITY, T, F))
+
+overall_stability <- cat_analysis(dframe = overall_stability, siteID = 'PLOTID', vars = 'Meeting',
+             stratumID = 'ECO.SITE',  subpops = 'AoInference',  weight = 'WghtPerPlot',
              vartype = 'Local', conf = 80)
 
-out <- WilsonCanHaveFun(data = df, outcome = 'Outcome')
+# Under canopy stability
+
+dat2run <- ss_sum %>% 
+  filter(Type == 'Canopy')
+
+ss_median_canopy <- ss_median %>% 
+  filter(SETTING == 'CANOPY', ESTIMATE == 'LOW') %>% 
+  distinct() %>% 
+  select(ESD, STABILITY) %>% 
+  bind_rows(., data.frame(ESD = 'UNKNOWN', STABILITY = 4)) # ALSO A 4 FOR THE LOW MEDIAN
+
+canopy_stability <- left_join(dat2run, ss_median_canopy, by = c('ECO.SITE' = 'ESD')) %>% 
+  mutate(STABILITY = if_else(is.na(STABILITY), 4, STABILITY), 
+         Meeting = if_else(SiteStability >= STABILITY, T, F))
+
+canopy_stability <- cat_analysis(dframe = canopy_stability, siteID = 'PLOTID', vars = 'Meeting',
+             stratumID = 'ECO.SITE',  subpops = 'AoInference',  weight = 'WghtPerPlot',
+             vartype = 'Local', conf = 80)
+
+# Interspaces stability
+
+dat2run <- ss_sum %>% 
+  filter(Type == 'Interspace')
+
+ss_median_interspace <- ss_median %>% 
+  filter(SETTING == 'INTERSPACE', ESTIMATE == 'LOW') %>% 
+  distinct() %>% 
+  select(ESD, STABILITY) %>% 
+  bind_rows(., data.frame(ESD = 'UNKNOWN', STABILITY = 3)) 
+
+interspace_stability_df <- left_join(dat2run, ss_median_interspace, by = c('ECO.SITE' = 'ESD')) %>% 
+  mutate(STABILITY = if_else(is.na(STABILITY), 4, STABILITY), 
+         Meeting = if_else(SiteStability >= STABILITY, T, F))
+
+interspace_stability <- cat_analysis(dframe = interspace_stability_df, siteID = 'PLOTID', vars = 'Meeting',
+             stratumID = 'ECO.SITE',  subpops = 'AoInference',  weight = 'WghtPerPlot',
+             vartype = 'Local', conf = 80)
+
+
+
+
+out <- WilsonCanHaveFun(data = interspace_stability, outcome = 'Meeting')
+
 ```
 
 \newpage 
