@@ -343,6 +343,21 @@ rm(WilsonCanHaveFun, dat2run, ss_median_interspace, ss_median_canopy, ss_median_
    canopy_stability_df, interspace_stability_df, overall_stability_df)
 ```
 
+
+```{r}
+
+wr_sum %>% 
+  select(PLOTID, AoInference, Meeting,  CATEGORY = Type, ECO.SITE) %>% 
+  rename_with(toupper) %>% 
+  mutate(INDICATOR = 'SOIL-STABILITY', .before = 'CATEGORY') %>% 
+  mutate(across(.cols = everything(), toupper)) %>% 
+  write.csv(., row.names = F, 
+          '../data/processed/soil_stability_meeting_benchmarks.csv')
+
+```
+
+
+
 ```{r Plot Results of Soil Stability}
 
 ```
