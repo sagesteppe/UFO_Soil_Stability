@@ -250,13 +250,14 @@ rm(header, td_summary,  pts, esd_class)
 ```{r retrieve and associate plot weights}
 
 wghts <- read.csv( file.path(praw, f[grep('Weights', f)])) %>% 
-  select(WghtPerPlot, STRATUM = Stratum, AoInference = Area)
+  select(WghtPerPlot, STRATUM = Stratum, AoInference = Area) 
 
 ss_sum <- read.csv( file.path(praw, f[grep('Interence', f)])) %>% 
   select(PLOTID = Plot.ID, AoInference) %>% 
   right_join(., ss_sum) %>% 
   mutate(STRATUM = str_remove(str_extract(PLOTID, '^.*-'), '-')) %>% 
   left_join(., wghts, by = c('STRATUM','AoInference')) %>% 
+  mutate(AoInference = str_replace(AoInference, '-NM', '-NCA')) %>% 
   st_as_sf()
 
 rm(wghts)
@@ -349,7 +350,114 @@ rm(WilsonCanHaveFun, dat2run, ss_median_interspace, ss_median_canopy, ss_median_
 ```
 
 
+```{r figure of cover by administrative area, eval = F}
+
+waff_dat_cover <- overall_stab %>% 
+  filter(Category == T) %>% 
+  mutate(
+    across(where(is.numeric), ~ round(.x, 0)),
+    Low = if_else(LCB80Pct.P == 0, 0, LCB80Pct.P - 1),
+    CI_Low = Estimate.P - LCB80Pct.P,
+    Estimate = 1,
+    CI_High = UCB80Pct.P - Estimate.P,
+    High = if_else(UCB80Pct.P == 0, 100, 100 - UCB80Pct.P)
+  ) %>% 
+  rowwise(Subpopulation) %>% 
+  mutate(High = if_else(sum(c_across(Low:High)) > 100, High -1, High),
+         High = if_else(sum(c_across(Low:High)) < 100, High + 1, High))  %>% 
+  select(Subpopulation, Low:High) %>% 
+  pivot_longer(cols = Low:High, names_to = 'Statistic', values_to = 'Value') %>% 
+  group_by(Subpopulation) %>% 
+  mutate(
+    Statistic = factor(Statistic,
+                       levels = c('Low', 'CI_Low', 'Estimate', 'CI_High', 'High')), 
+    Subpopulation = factor(Subpopulation,
+                       levels = c('ACEC-WSA', 'DE-NCA', 'GG-NCA', 'SampleFrame')))
+
+
+waff_dat <- data.table::setorder(waff_dat_cover, Statistic)
+waf_values = c('Low' = '#1FE032', 'High' = '#E0321F', 'CI_Low' = '#808929', 
+               'Estimate' = 'black', 'CI_High' = '#808929')
+
+
+w <- ggplot(waff_dat_cover, aes(fill = Statistic, values = Value)) +
+  geom_waffle(color = "white", size = .25, flip = TRUE) +
+  facet_wrap( ~ Subpopulation) +
+  scale_fill_manual('Condition', values = waf_values, 
+                    labels = c('Meeting', 'Conf. Int.', "Estimate", 'Conf. Int.', 'Failing')) +
+  scale_x_discrete()  +
+  scale_y_continuous('Percent Land', labels = function(x)round(x * 10, -1), expand = c(0,0))  +
+  
+  theme(
+    legend.position="bottom", legend.direction="vertical",
+    aspect.ratio = 1,
+    axis.text.y = element_text(color = "grey20", size = 6, angle = 45),
+    axis.title.y = element_text(size = 9),
+    legend.key.size = unit(0.8, 'lines'),
+    legend.text = element_text(size = 10),
+    legend.title = element_text(hjust = 0.5, size = 12), 
+    plot.title = element_text(hjust = 0.5, size = 10, face = 'bold'),
+    panel.spacing = unit(0.4, "lines"), 
+    strip.background =element_rect(fill="white"), 
+    panel.background = element_blank()) +
+  guides(fill=guide_legend(ncol=2))
+
+w
+
+ggsave(w, path = '../results', device = 'png', bg = 'transparent',
+       filename = 'waffles.png', dpi = 300, height = 4, units = "in")
+```
+
+
+\newpage 
+
+# Results
+
 ```{r}
+
+bg <- overall_stab %>% 
+  filter(Category == T)
+
+samples <- overall_stab %>% 
+  filter(Category == 'Total')
+  
+gg_meet <- toString(
+  paste0(
+    round(bg[bg$Subpopulation == 'GG-NCA', 'LCB80Pct.P'], 1), '- ', 
+    round(bg[bg$Subpopulation == 'GG-NCA', 'Estimate.P'], 1), '% -',  
+    round(bg[bg$Subpopulation == 'GG-NCA', 'UCB80Pct.P'], 1) ) )
+
+sf_meet <- toString(
+  paste0(
+    round(bg[bg$Subpopulation == 'SampleFrame', 'LCB80Pct.P'], 1), '- ', 
+    round(bg[bg$Subpopulation == 'SampleFrame', 'Estimate.P'], 1), '% -',  
+    round(bg[bg$Subpopulation == 'SampleFrame', 'UCB80Pct.P'], 1) ) )
+
+de_meet <- toString(
+  paste0(
+    round(bg[bg$Subpopulation == 'DE-NCA', 'LCB80Pct.P'], 1), '- ', 
+    round(bg[bg$Subpopulation == 'DE-NCA', 'Estimate.P'], 1), '% -',  
+    round(bg[bg$Subpopulation == 'DE-NCA', 'UCB80Pct.P'], 1) ) )
+
+acec_meet <- toString(
+  paste0(
+    round(bg[bg$Subpopulation == 'ACEC-WSA', 'LCB80Pct.P'], 1), '- ', 
+    round(bg[bg$Subpopulation == 'ACEC-WSA', 'Estimate.P'], 1), '% -',  
+    round(bg[bg$Subpopulation == 'ACEC-WSA', 'UCB80Pct.P'], 1) ) )
+
+rm(bareground, benchmarks)
+```
+
+\begin{wrapfigure}{l}{0.5\textwidth}
+  \centering
+    \includegraphics[width=0.5\textwidth]{../results/waffles.png}
+  \caption{Percent land meeting reference benchmark conditions}
+\end{wrapfigure}
+
+
+Of the `r distinct(wr_sum, PLOTID) |> nrow()` sites analyzed `r filter(wr_sum, Meeting==T & Type=='Site') |> nrow()` were meeting the benchmark for median cover across the entire plot, a similar number of plots were meeting the lower benchmarks for canopy (`r filter(wr_sum, Meeting==T & Type=='Canopy') |> nrow()`) and inter-spaces (`r filter(wr_sum, Meeting==T & Type=='Interspace') |> nrow()`). Accordingly, hereafter for the sake of simplicity we only discuss the overall plot conditions, which appear to capture this variation of habitat.  Across the general UFO field office `r sf_meet` of land was meeting this benchmark condition, the estimates of uncertainty around the total area of the field office which were meeting these objectives were relatively narrow, and showed that roughly only half of the land in the field office was within reference condition for soil stability, and much of the area is susceptible to erosion. Of the remaining three management areas none were meeting the objectives for the percent of land in acceptable condition. The Gunnison Gorge National Conservation Area had the highest estimate of stability, `r gg_meet`, the breadth of the confidence intervals in due partially to the relatively small sample size (n = `r samples[samples$Subpopulation == 'GG-NCA','nResp']`), and the true value likely falling much closer to the estimate, which more closely agrees with the estimates for BLM land on the whole. Relative to the other ares Dominguez Escalente National Conservation Area had much lower estimates of soil stability, `r de_meet`, however it had a respectable sample size (n = `r samples[samples$Subpopulation == 'DE-NCA','nResp']`), indicating these low values are not an artifact of sampling. While the Areas of Critical Environmental Concern-Wilderness Study Areas had a relatively small sample size (n = `r samples[samples$Subpopulation == 'ACEC-WSA','nResp']`), their values, `r acec_meet`, are congruent with the values for the remainder of BLM Land. 
+
+```{r write out results to csv}
 
 wr_sum %>% 
   select(PLOTID, AoInference, Meeting,  CATEGORY = Type, ECO.SITE) %>% 
@@ -358,22 +466,12 @@ wr_sum %>%
   mutate(across(.cols = everything(), toupper)) %>% 
   write.csv(., row.names = F, 
           '../data/processed/soil_stability_meeting_benchmarks.csv')
-
-
 ```
 
-
-
-```{r Plot Results of Soil Stability}
-
+```{sh, crop the images, eval = F}
+cd ../results
+mogrify -trim *.png
 ```
-
-
-\newpage 
-
-# Results
-
-Of the `r distinct(wr_sum, PLOTID) |> nrow()` sites analyzed `r filter(wr_sum, Meeting==T & Type=='Site') |> nrow()` were meeting the benchmark for median cover across the entire plot, a similar number of plots were meeting the lower benchmarks for canopy (`r filter(wr_sum, Meeting==T & Type=='Canopy') |> nrow()`) and interspaces (`r filter(wr_sum, Meeting==T & Type=='Interspace') |> nrow()`). Across the general UFO field office `r filter(overall_stab, Category==T, Subpopulation=='SampleFrame')$Estimate.P`% of land was meeting this benchmark condition, the estimates of uncertainty around the total area of the field office which were meeting these objectives were relatively narrow, (80% Confidence Interval (CI) `r filter(overall_stab, Subpopulation == 'SampleFrame', Category== T)$LCB80Pct.P`% - `r filter(overall_stab, Subpopulation == 'SampleFrame', Category== T)$UCB80Pct.P`%). Of the three management areas with higher management objectives, `r filter(overall_stab, Category==T, Estimate.P >= 80) %>% nrow()` had estimates meeting their goals, and `r filter(overall_stab, Category==T, UCB80Pct.P >= 80) %>% nrow()` of their relatively broad confidence intervals overlap their goals.
 
 
 \newpage
