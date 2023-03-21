@@ -23,8 +23,6 @@ knitr::opts_chunk$set(warning = F)
 knitr::opts_chunk$set(fig.align="left") 
 ```
 
-# Introduction
-
 AIM uses the soil stability of *(macro)aggregates* as an indicator of the potential for soil to erode (soil erodibility) (@AIM2021manual, @herrick2001field). Soil aggregates are groups of soil particles which clump together to form individual strongly connected (micro)aggregates, which may then continually clump together with each other and organic matter to form larger less weakly connected (macro)aggregates (@totsche2018microaggregates). High numbers of macroaggregates at the soil surface have been shown to correlate strongly to the effects of rain, and wind, on the loss of soil from areas (@barthes2002aggregate, @herrick2001field). While the relationships between soil erosion, plant cover and functional type (@cerda1998soil, @greene1994role, @de2023functional), landform position (@swanson1988landform, @de2023functional), slope shape (e.g. concave, convex) (@canton2009aggregate, @de2023functional), and the cover of biocrusts are oftentimes complex (@leys1998influence), the quantitative observation that soils with low macroaggregate stability have greater rates of erodibility are always evident (@herrick2018rangeland). 
 
 For this report, soil aggregates refer to relatively large coherent portions of soils (> 2mm diameter) (@AIM2021manual). Soil microaggregates are continually being slowly created by processes, such as the initial attraction of negatively charged clay and positively charged salts on silt particles, followed by cementation (@totsche2018microaggregates). Cementation is often achieved through organic matter and/or calcium carbonates and oxides, which then leads to biological processes. These involve the creation of numerous long organic (Carbon containing) molecules (generally polysaccharides), by organisms such as bacteria especially filamentous cyanobacteria, fungal hyphae, and plant roots, which act as 'glue' between these particles and will create macroaggregates (@six2004history, @totsche2018microaggregates, @moonilall2019aggregates). Soil macroaggregates in non agricultural lands are continually quickly formed, and subsequently broken back into modified microaggregates by: certain wildland fire conditions (@urbanek2013aggregates), rapid drying and wetting, freeze-thaw cycles, some chemical interactions with water, and compaction (@le1996aggregate). When many more soil aggregates are being broken apart than are created areas become more susceptible to erosion from water, or wind (@leys1998influence, @six2004history). 
@@ -42,7 +40,7 @@ Soil stability will be the only core-indicator in this report that is treated as
 
 As can readily be seen, from these two classes which are the most similar, breaks are of wildly different sizes (15% and 50%), and clearly violate this assumption. Another condition where ordinal values can be treated as continuous is when they represent a great range. Finally, we have few replicates per site. Soil stability is measured at only 18 locations per plot, roughly only half of the recommended observations for using parametric statistics. While non-parametric statistics are often applied to numeric data, they perform very well with small samples sizes. Accordingly, we end up in relatively the same place statistically by treating these values as ordinal categorical variables.
 
-# Methods
+## Methods
 
 ```{r load libraries}
 library(tidyverse)
@@ -171,7 +169,6 @@ rm(prcnt, ss_two, ss_one, ss_full, soil_stab)
 ```
 
 
-
 ```{r Import and tidy soil stability info}
 
 ss <- read.csv(file.path(praw, f[grep('AIM', f)])) %>% 
@@ -207,12 +204,13 @@ rm(ss)
 # read in header which serves as link between SS and and summary data
 header <- read.csv(file.path(praw, f[grep('Header', f)])) %>% 
   select(PlotKey, PrimaryKey)
-ss_sum <- inner_join(header, ss_sum, by ='PrimaryKey') # all good.
+ss_sum <- inner_join(header, ss_sum, by ='PrimaryKey', multiple = "all") # all good.
 
 # read in summary data 
 td_summary <- read.csv(file.path(praw, f[grep('Summary', f)])) %>% 
   select(PrimaryKey, PlotKey, PlotID, Latitude_NAD83, Longitude_NAD83)
-ss_sum <- inner_join(td_summary, ss_sum, by = c('PrimaryKey', 'PlotKey')) # all good
+ss_sum <- inner_join(td_summary, ss_sum, by = c('PrimaryKey', 'PlotKey'), 
+                     multiple = "all") # all good
 
 # read in ESD classifications
 esd_class <- read.csv( file.path(praw, f[grep('Tracking', f)]) ) %>% 
@@ -249,7 +247,7 @@ wghts <- read.csv( file.path(praw, f[grep('Weights', f)])) %>%
 
 ss_sum <- read.csv( file.path(praw, f[grep('Interence', f)])) %>% 
   select(PLOTID = Plot.ID, AoInference) %>% 
-  right_join(., ss_sum) %>% 
+  right_join(., ss_sum, multiple = "all") %>% 
   mutate(STRATUM = str_remove(str_extract(PLOTID, '^.*-'), '-')) %>% 
   left_join(., wghts, by = c('STRATUM','AoInference')) %>% 
   mutate(AoInference = str_replace(AoInference, '-NM', '-NCA')) %>% 
@@ -399,7 +397,7 @@ ggsave(w, path = '../results', device = 'png', bg = 'transparent',
        filename = 'waffles.png', dpi = 300, height = 4, units = "in")
 ```
 
-# Results
+## Results & Discussion
 
 ```{r write out results for printing}
 
@@ -433,7 +431,6 @@ acec_meet <- toString(
     round(bg[bg$Subpopulation == 'ACEC-WSA', 'Estimate.P'], 1), ', UCL ', 
     round(bg[bg$Subpopulation == 'ACEC-WSA', 'UCB80Pct.P'], 1), ')' ) )
 
-rm(bareground, benchmarks)
 ```
 
 \begin{wrapfigure}{r}{0.4\textwidth}
@@ -461,6 +458,6 @@ mogrify -trim *.png
 ```
 
 
-\newpage
+### References 
 
-# References 
+\small
