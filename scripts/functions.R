@@ -42,9 +42,8 @@ WilsonCanHaveFun <- function(data, outcome, conf, ...){
   
   prediction <- data.frame(Hmisc::binconf(x = length(outcome_var[outcome_var==T]) , 
                                n = length(outcome_var), alpha = (1 - conf), ...))
-  #  prediction <-
-  #    data.frame(cbind(Variable = deparse(substitute(data)), prediction))
+    prediction <-
+      data.frame(cbind(Variable = deparse(substitute(data)), prediction))
   
   return(prediction)
 }
-

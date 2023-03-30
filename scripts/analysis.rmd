@@ -13,6 +13,7 @@ bibliography: ../citations/citations/citations.bib
 link-citations: yes
 ---
 
+\pagenumbering{gobble}
 \vspace{-1cm}
 
 ```{r setup, include=FALSE}
@@ -23,9 +24,9 @@ knitr::opts_chunk$set(warning = F)
 knitr::opts_chunk$set(fig.align="left") 
 ```
 
-AIM uses the soil stability of *(macro)aggregates* as an indicator of the potential for soil to erode (soil erodibility; Section VII) (@AIM2021manual, @herrick2001field). Soil aggregates are groups of soil particles which clump together to form individual strongly connected (micro)aggregates, which may then continually clump together with each other, and organic matter, to form larger less weakly connected (macro)aggregates (@totsche2018microaggregates). High numbers of macroaggregates at the soil surface have been shown to correlate strongly to reduce the effects of rain, and wind, on the loss of soil from areas (@barthes2002aggregate, @herrick2001field). While the relationships between soil erosion, plant cover and functional type (@cerda1998soil, @greene1994role, @de2023functional), landform position (@swanson1988landform, @de2023functional), slope shape (e.g. concave, convex) (@canton2009aggregate, @de2023functional), and the cover of biocrusts are oftentimes complex (@leys1998influence), the quantitative observation that soils with low macroaggregate stability have greater rates of erodibility are always evident (@herrick2018rangeland). 
+AIM uses the stability of *(macro)aggregates* as an indicator of the potential for soil to erode (soil erodibility; Section VII) (@AIM2021manual, @herrick2001field). Soil aggregates are groups of soil particles which clump together to form individual strongly connected (micro)aggregates, which may then continually clump together with each other, and organic matter, to form larger less weakly connected (macro)aggregates (@totsche2018microaggregates). High numbers of macroaggregates at the soil surface have been shown to correlate strongly to reduce the effects of rain, and wind, on the loss of soil from areas (@barthes2002aggregate, @herrick2001field). While the relationships between soil erosion, plant cover and functional type (@cerda1998soil, @greene1994role, @de2023functional), landform position (@swanson1988landform, @de2023functional), slope shape (e.g. concave, convex) (@canton2009aggregate, @de2023functional), and the cover of biocrusts are oftentimes complex (@leys1998influence), the quantitative observation that soils with low macroaggregate stability have greater rates of erodibility are always evident (@herrick2018rangeland). 
 
-For this report, soil aggregates refer to relatively large coherent portions of soils (> 2mm diameter) (@AIM2021manual). Soil microaggregates are continually being created by processes, such as the initial attraction of negatively charged clay and positively charged salts on silt particles, followed by cementation (@totsche2018microaggregates). Cementation is often achieved through organic matter and/or calcium carbonates and oxides, which then leads to biological processes. These involve the creation of numerous long organic (Carbon containing) molecules (generally polysaccharides), by organisms such as bacteria especially filamentous cyanobacteria, fungal hyphae, and plant roots, which act as 'glue' between these particles and will create macroaggregates (@six2004history, @totsche2018microaggregates, @moonilall2019aggregates). Soil macroaggregates in non agricultural lands are continually quickly formed, and subsequently broken back into modified microaggregates by: certain wildland fire conditions (@urbanek2013aggregates), rapid drying and wetting, freeze-thaw cycles, some chemical interactions with water, and compaction (@le1996aggregate). When many more soil aggregates are being broken apart than are created areas become more susceptible to erosion from water, or wind (@leys1998influence, @six2004history). 
+For this report, soil aggregates refer to relatively large coherent portions of soils (> 2mm diameter) (@AIM2021manual). Soil microaggregates are continually being created by processes, such as the initial attraction of negatively charged clay and positively charged salts on silt particles, followed by cementation (@totsche2018microaggregates). Cementation is often achieved through organic matter and/or calcium carbonates and oxides, which then leads to biological processes. These involve the creation of numerous long organic (Carbon containing) molecules (generally polysaccharides), by organisms such as bacteria especially filamentous cyanobacteria, fungal hyphae, and plant roots, which act as 'glue' between these particles and will create macroaggregates (@six2004history, @totsche2018microaggregates, @moonilall2019aggregates). Soil macroaggregates in non-agricultural lands are continually quickly formed, and subsequently broken back into modified microaggregates by: certain wildland fire conditions (@urbanek2013aggregates), rapid drying and wetting, freeze-thaw cycles, some chemical interactions with water, and compaction (@le1996aggregate). When many more soil aggregates are being broken apart than are created areas become more susceptible to erosion from water, or wind (@leys1998influence, @six2004history). 
 
 Soil erosion decreases water infiltration into the soil and less water is available to plants, reduces soil nutrients available to plants and microorganisms, removes soil carbon which foster soil microorganisms, and decrease root depth and space for plants; all leading to decreases in plant diversity, abundance and production (reviewed in @pimentel1998ecology). Accordingly, soil erosion may lead to the inability of an Ecological Site to support certain plant species essential to the maintenance of the site @bestelmeyer2015desertification. In most instances this will tend to lead to a different or altered *state* and *phase*, generally with lower ecosystem diversity, to occur on the site (@bestelmeyer2015desertification). However, in severe instances soil erosion will lead to conversion of a site into a state from which land management agencies are unlikely to be capable of restoring basic ecosystem services absent extensive and costly inputs (@bestelmeyer2015desertification). Realistically in nearly all semi-arid lands utilized as rangelands, this equates to desertification. 
 
@@ -46,10 +47,12 @@ As can readily be seen, from these two classes which are the most similar, break
 library(tidyverse)
 library(spsurvey)
 library(sf)
+library(ff)
+
 source('functions.R')
 ```
 
-The first step in assessing whether the field office was achieving benchmark conditions regarding soil stability was to impute the measurements for these values at Ecological Sites which were lacking Descriptions, or which had incomplete descriptions. Similar to **SECTION(X.X)**, these values were imputed by *feature engineering*, however since they were ordinal categorical variables the *median* of the values were used. 
+The first step in assessing whether the field office was achieving benchmark conditions regarding soil stability was to impute the measurements for these values at Ecological Sites which were lacking Descriptions, or which had incomplete descriptions. These values were imputed by *feature engineering*, however since they were ordinal categorical variables the *median* of the values were used. 
 
 ```{r import data and feature engineering missing benchmarks}
 
@@ -220,7 +223,7 @@ esd_class <- read.csv( file.path(praw, f[grep('Tracking', f)]) ) %>%
 
 # join plots to our ESD's spatially ! spatial_join() with a small buffer. 
 pts <- st_read(
-  '/media/sagesteppe/ExternalHD/aimDB/data/raw/AIM_Sample_Design/AIM_Design_Stratification.shp',
+  '../../aimDB/data/raw/AIM_Sample_Design/AIM_Design_Stratification.shp',
                 quiet = T) %>% 
   st_transform(26913) %>% 
   st_buffer(55) %>% 
@@ -322,13 +325,6 @@ interspace_stability_df <- left_join(dat2run, ss_median_interspace,
 interspace_stab <- cat_analysis(
   dframe = interspace_stability_df, siteID = 'PLOTID', vars = 'Meeting',
   subpops = 'AoInference',  weight = 'WghtPerPlot', vartype = 'Local', conf = 80)
- 
-# spsurvey likely doing a bit more than we can match... it always off by a few percent.
-
-# l <- split(overall_stability, overall_stability$AoInference)  
-# lapply(l, WilsonCanHaveFun, outcome = 'Meeting')
-# out <- WilsonCanHaveFun(data = overall_stability, outcome = 'Meeting')
-
 
 # create a writing summary dataframe to pull values from 
 wr_sum <- bind_rows(canopy_stability_df, interspace_stability_df, overall_stability_df) %>% 
@@ -458,6 +454,6 @@ mogrify -trim *.png
 ```
 
 
-### References 
+## References 
 
 \small
