@@ -1,5 +1,7 @@
 ---
 title: "Soil Erosion Potential"
+knitr: (function(inputFile, encoding) 
+  { rmarkdown::render(inputFile, encoding = encoding, output_file = file.path(dirname(inputFile), 'Section_9.pdf')) })
 output:
   pdf_document: default
   word_document: default
@@ -48,7 +50,6 @@ library(tidyverse)
 library(spsurvey)
 library(sf)
 library(ff)
-
 source('functions.R')
 ```
 
@@ -131,7 +132,7 @@ rm(ss_med_n)
 
 A relatively high amount of Ecological Sites Descriptions (`r length(unique(ss_full$ESD))` of `r length(unique(soil_stab$ESD))`, `r prcnt`) contained soil stability reference benchmarks under two conditions as well as a site 'average':  1) Interspaces (the distance between plant canopies), 2) Under Canopy (areas beneath plant cover), 3) Site 'average' (hereafter: median). 
 
-A hand-full of sites (n = `r length(unique(ss_two$ESD))`) contained values for both under canopies and interspaces, but lacked a site wide median; a dozen sites had only one value (n = `r nrow(ss_one[ss_one$SETTING=='SITE',])` 'site', and n = `r nrow(ss_one[ss_one$SETTING=='INTERSPACES',])` 'interspaces'). To calculate these estimates for ESD's which were missing them, the median for each category was gathered using each observation (Figure 1, Table 1). The missing values were then imputed in each ESD which was missing a value, as well as for each ES which was missing all values. 
+A hand-full of sites (n = `r length(unique(ss_two$ESD))`) contained values for both under canopies and interspaces, but lacked a site wide median; a dozen sites had only one value (n = `r nrow(ss_one[ss_one$SETTING=='SITE',])` 'site', and n = `r nrow(ss_one[ss_one$SETTING=='INTERSPACES',])` 'interspaces'). To calculate these estimates for ESD's which were missing them, the median for each category was gathered using each observation (Figure 1). The missing values were then imputed in each ESD which was missing a value, as well as for each ES which was missing all values. 
 
 ```{r Impute missing values into all ESDs and save}
 
@@ -350,7 +351,8 @@ waff_dat_cover <- overall_stab %>%
   ) %>% 
   rowwise(Subpopulation) %>% 
   mutate(High = if_else(sum(c_across(Low:High)) > 100, High -1, High),
-         High = if_else(sum(c_across(Low:High)) < 100, High + 1, High))  %>% 
+         High = if_else(sum(c_across(Low:High)) < 100, High + 1, High),
+         Subpopulation = str_replace(Subpopulation, 'SampleFrame', 'Remaining-BLM'))  %>% 
   select(Subpopulation, Low:High) %>% 
   pivot_longer(cols = Low:High, names_to = 'Statistic', values_to = 'Value') %>% 
   group_by(Subpopulation) %>% 
@@ -358,16 +360,15 @@ waff_dat_cover <- overall_stab %>%
     Statistic = factor(Statistic,
                        levels = c('Low', 'CI_Low', 'Estimate', 'CI_High', 'High')), 
     Subpopulation = factor(Subpopulation,
-                       levels = c('ACEC-WSA', 'DE-NCA', 'GG-NCA', 'SampleFrame')))
+                       levels = c('ACEC-WSA', 'DE-NCA', 'GG-NCA', 'Remaining-BLM')))
 
 
 waff_dat <- data.table::setorder(waff_dat_cover, Statistic)
 waf_values = c('Low' = '#1FE032', 'High' = '#E0321F', 'CI_Low' = '#808929', 
                'Estimate' = 'black', 'CI_High' = '#808929')
 
-
 w <- ggplot(waff_dat_cover, aes(fill = Statistic, values = Value)) +
-  geom_waffle(color = "white", size = .25, flip = TRUE) +
+  waffle::geom_waffle(color = "white", size = .25, flip = TRUE) +
   facet_wrap( ~ Subpopulation) +
   scale_fill_manual('Condition', values = waf_values, 
                     labels = c('Meeting', 'Conf. Int.', "Estimate", 'Conf. Int.', 'Failing')) +
@@ -411,20 +412,20 @@ gg_meet <- toString(
 
 sf_meet <- toString(
   paste0(
-    round(bg[bg$Subpopulation == 'SampleFrame', 'LCB80Pct.P'], 1), '% (LCL ',
-    round(bg[bg$Subpopulation == 'SampleFrame', 'Estimate.P'], 1), ', UCL ',  
+    round(bg[bg$Subpopulation == 'SampleFrame', 'Estimate.P'], 1), '% (LCL ',
+    round(bg[bg$Subpopulation == 'SampleFrame', 'LCB80Pct.P'], 1), ', UCL ',  
     round(bg[bg$Subpopulation == 'SampleFrame', 'UCB80Pct.P'], 1), ')' ) )
 
 de_meet <- toString(
   paste0(
-    round(bg[bg$Subpopulation == 'DE-NCA', 'LCB80Pct.P'], 1), '% (LCL ',
-    round(bg[bg$Subpopulation == 'DE-NCA', 'Estimate.P'], 1), ', UCL ',  
+    round(bg[bg$Subpopulation == 'DE-NCA', 'Estimate.P'], 1), '% (LCL ',
+    round(bg[bg$Subpopulation == 'DE-NCA', 'LCB80Pct.P'], 1), ', UCL ',  
     round(bg[bg$Subpopulation == 'DE-NCA', 'UCB80Pct.P'], 1), ')' ) )
 
 acec_meet <- toString(
   paste0(
-    round(bg[bg$Subpopulation == 'ACEC-WSA', 'LCB80Pct.P'], 1), '% (LCL ',
-    round(bg[bg$Subpopulation == 'ACEC-WSA', 'Estimate.P'], 1), ', UCL ', 
+    round(bg[bg$Subpopulation == 'ACEC-WSA', 'Estimate.P'], 1), '% (LCL ',
+    round(bg[bg$Subpopulation == 'ACEC-WSA', 'LCB80Pct.P'], 1), ', UCL ', 
     round(bg[bg$Subpopulation == 'ACEC-WSA', 'UCB80Pct.P'], 1), ')' ) )
 
 ```
@@ -435,7 +436,7 @@ acec_meet <- toString(
   \caption{Percent land meeting reference benchmark conditions}
 \end{wrapfigure}
 
-Of the `r distinct(wr_sum, PLOTID) |> nrow()` sites analyzed `r filter(wr_sum, Meeting==T & Type=='Site') |> nrow()` were meeting the benchmark for median soil stability across the entire plot, a similar number of plots were meeting the lower benchmarks for canopy (`r filter(wr_sum, Meeting==T & Type=='Canopy') |> nrow()`) and inter-spaces (`r filter(wr_sum, Meeting==T & Type=='Interspace') |> nrow()`). Accordingly, hereafter for the sake of simplicity we only discuss the overall plot conditions, rather than all three benchmarks because it alone appears to capture this variation. Across the general UFO field office `r sf_meet` of land was meeting this benchmark condition, the estimates of uncertainty around the total area of the field office which were meeting these objectives were relatively narrow, and showed that roughly only half of the land in the field office was within reference condition for soil stability, and much of the area is more susceptible to erosion. Of the remaining three management areas none were meeting the objectives for the percent of land in acceptable condition. The Gunnison Gorge National Conservation Area had the highest estimate of stability, `r gg_meet`, the breadth of the confidence intervals is due partially to the relatively small sample size (n = `r samples[samples$Subpopulation == 'GG-NCA','nResp']`), and the true value likely falling much closer to the estimate, which more closely agrees with the estimates for BLM land overall. Relative to the other ares Dominguez Escalente National Conservation Area had much lower estimates of lands achieving soil stability benchmarks, `r de_meet`, with a sample size of `r samples[samples$Subpopulation == 'DE-NCA','nResp']`, hence these low values are not an artifact of sampling. While the Areas of Critical Environmental Concern-Wilderness Study Areas had a relatively small sample size (n = `r samples[samples$Subpopulation == 'ACEC-WSA','nResp']`), their values, `r acec_meet`, are congruent with the values for the remainder of BLM Land (Figure 2). 
+Of the `r distinct(wr_sum, PLOTID) |> nrow()` sites analyzed `r filter(wr_sum, Meeting==T & Type=='Site') |> nrow()` were meeting the benchmark for median soil stability across the entire plot, a similar number of plots were meeting the lower benchmarks for canopy (`r filter(wr_sum, Meeting==T & Type=='Canopy') |> nrow()`) and inter-spaces (`r filter(wr_sum, Meeting==T & Type=='Interspace') |> nrow()`). Accordingly, hereafter for the sake of simplicity we only discuss the overall plot conditions, rather than all three benchmarks because it alone appears to capture this variation. Across the general UFO `r sf_meet` of land was meeting this benchmark condition, the estimates of uncertainty around the total area of the field office which were meeting these objectives were relatively narrow, and showed that roughly only half of the land in the field office was within reference condition for soil stability, and much of the area is more susceptible to erosion. Of the remaining three management areas none were meeting the objectives for the percent of land in acceptable condition. The Gunnison Gorge National Conservation Area had the highest estimate of stability, `r gg_meet`, the breadth of the confidence intervals is due partially to the relatively small sample size (n plots = `r samples[samples$Subpopulation == 'GG-NCA','nResp']`), and the true value likely falling much closer to the estimate, which more closely agrees with the estimates for BLM land overall. Relative to the other ares Dominguez Escalente National Conservation Area had much lower estimates of lands achieving soil stability benchmarks, `r de_meet`, with a sample size of `r samples[samples$Subpopulation == 'DE-NCA','nResp']` plots, hence these low values are not an artifact of sampling. While the Areas of Critical Environmental Concern-Wilderness Study Areas had a relatively small sample size (n plots = `r samples[samples$Subpopulation == 'ACEC-WSA','nResp']`), their values, `r acec_meet`, are congruent with the values for the remainder of BLM Land (Figure 2). 
 
 ```{r write out results to csv}
 
